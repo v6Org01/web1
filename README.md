@@ -1,4 +1,4 @@
-### Copy of the Hugoplate starter template developed by [Zeon Studio](https://zeon.studio/)
+### Point-in-time Copy of the Hugoplate starter template developed by [Zeon Studio](https://zeon.studio/)
 :octocat: [Source repo](https://github.com/zeon-studio/hugoplate) <br />
 _Last copied on 20 Sept 2024_ <br />
 <br />

@@ -43,6 +43,10 @@ RUN <<EOV
     find . -type f -exec sed -i -e 's/localhost/${URI}/g' {} \;
     sed -i 's/"dev": "hugo server"/"dev": "hugo server --bind=0.0.0.0"/' ./package.json
 
+    mkdir $HOME/.vim && cd $HOME/.vim
+    wget -O ./vim-markdown-master.tar.gz https://github.com/preservim/vim-markdown/archive/master.tar.gz
+    tar --strip=1 -zxf ./vim-markdown-master.tar.gz
+
 EOV
 
 CMD ["/usr/bin/npm", "run", "dev"]

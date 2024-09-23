@@ -11,7 +11,7 @@ ARG WEB1_GROUP
 
 RUN <<EOF
 
-    apk --update -t add --no-cache git hugo go npm tzdata --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community
+    apk --update -t add --no-cache vim git hugo go npm tzdata --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community
     rm -f /var/cache/apk/* /tmp/*
     rm -f /sbin/halt /sbin/poweroff /sbin/reboot
 

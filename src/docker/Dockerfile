@@ -32,7 +32,7 @@ WORKDIR ${HUGO_DIR}
 
 RUN --mount=type=secret,id=GITHUB_USERNAME,env=GITHUB_USERNAME \
     --mount=type=secret,id=GITHUB_PAT,env=GITHUB_PAT \
-    sh -c 'git clone https://${GITHUB_USERNAME}:${GITHUB_PAT}@github.com/v6Org01/web1.git .'
+    sh -c 'git clone https://${GITHUB_USERNAME}:${GITHUB_PAT}@github.com/v6Org01/web1.git ${HUGO_DIR}'
 
 RUN <<EOV
 

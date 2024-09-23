@@ -42,6 +42,9 @@ RUN <<EOV
     find . -type f -exec sed -i -e 's/127.0.0.1/0.0.0.0/g' {} \;
     find . -type f -exec sed -i -e 's/localhost/${URI}/g' {} \;
     sed -i 's/"dev": "hugo server"/"dev": "hugo server --bind=0.0.0.0"/' ./package.json
+    sed -i 's/^baseURL =.*/baseURL = https:\/\/ddvvee03.jlv6.com/' ./hugo.toml
+    sed -i 's/^title =.*/title = "jlv6.com"/' ./hugo.toml
+    sed -i 's/^timeZone =.*/timeZone = "Europe/Brussels"/' ./hugo.toml
 
     mkdir $HOME/.vim && cd $HOME/.vim
     wget -O ./vim-markdown-master.tar.gz https://github.com/preservim/vim-markdown/archive/master.tar.gz

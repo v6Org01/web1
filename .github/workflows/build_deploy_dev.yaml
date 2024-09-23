@@ -1,0 +1,114 @@
+name: build_deploy_dev
+
+env:
+  REGISTRY_IMAGE: "${{ vars.FORGEJO_REGISTRY01 }}/${{ vars.FORGEJO_OWNER01 }}/${{ vars.IMAGE_NAME }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      DATE:
+        description: "Date Hugoplate branch change (DDMMYY)"
+        required: true
+        type: string
+      
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+
+  build-image:
+    environment: development
+    strategy:
+      matrix:
+        platform:
+          - amd64
+          - arm64
+        include:
+          - platform: amd64
+            runner: x64
+          - platform: arm64
+            runner: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to forgejo
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.FORGEJO_REGISTRY01 }}
+          username: ${{ secrets.FORGEJO_USER01 }}
+          password: ${{ secrets.FORGEJO_USER01_PAT }}
+      - name: Build and Push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: src/docker/Dockerfile
+          build-args: |
+            "HUGO_DIR=${{ vars.HUGO_DIR }}"
+            "URI=${{ vars.URI }}"
+            "WEB1_UID=${{ vars.WEB1_UID }}"
+            "WEB1_USER=${{ vars.WEB1_USER }}"
+            "WEB1_GID=${{ vars.WEB1_GID }}"
+            "WEB1_GROUP=${{ vars.WEB1_GROUP }}"
+          secrets: |
+            "GITHUB_USERNAME=${{ secrets.GIT_USERNAME }}"
+            "GITHUB_PAT=${{ secrets.GIT_PAT }}"
+          platforms: linux/${{ matrix.platform }}
+          push: true
+          cache-from: type=gha,scope=build-${{ github.event.repository.name }}-${{ vars.ENVIRONMENT }}-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=build-${{ github.event.repository.name }}-${{ vars.ENVIRONMENT }}-${{ matrix.platform }}
+          provenance: false
+          tags: |
+            "${{ env.REGISTRY_IMAGE }}:${{ inputs.DATE }}-${{ vars.ENVIRONMENT }}-${{ matrix.platform }}"
+
+  build-merge:
+    environment: development
+    runs-on: self-hosted
+    needs: build-image
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to forgejo
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.FORGEJO_REGISTRY01 }}
+          username: ${{ secrets.FORGEJO_USER01 }}
+          password: ${{ secrets.FORGEJO_USER01_PAT }}
+      - name: Create manifest list and push
+        run: |
+          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ inputs.DATE }}-${{ vars.ENVIRONMENT }} \
+            ${{ env.REGISTRY_IMAGE }}:${{ inputs.DATE }}-${{ vars.ENVIRONMENT }}-amd64 \
+            ${{ env.REGISTRY_IMAGE }}:${{ inputs.DATE }}-${{ vars.ENVIRONMENT }}-arm64
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ inputs.DATE }}-${{ vars.ENVIRONMENT }}
+
+  deploy:
+    environment: development
+    runs-on: self-hosted
+    if: success()
+    needs: build-merge
+    steps:
+      - name: Checkout k8s.git
+        uses: actions/checkout@v4
+        with:
+          repository: v6Org01/k8s
+          ref: main
+          token: ${{ secrets.GHA_PAT }}
+          sparse-checkout: |
+            .github/actions
+            ${{ vars.ARGOCD_CUSTOM_DIR }}
+      - name: Update image tag and deploy app with ArgoCD
+        uses: ./.github/actions/update-imageTag-argoDeploy
+        with:
+          FILE_PATH: ${{ vars.ARGOCD_CRD_APP_PATH }} 
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+          NAMESPACE: ${{ vars.NAMESPACE }}
+          VERSION: ${{ inputs.DATE }}-${{ vars.ENVIRONMENT }}

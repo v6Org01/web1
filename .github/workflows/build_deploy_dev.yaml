@@ -107,6 +107,6 @@ jobs:
         uses: ./.github/actions/update-imageTag-argoDeploy
         with:
           FILE_PATH: ${{ vars.ARGOCD_CRD_APP_PATH }} 
-          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+          KUBECONFIG: ${{ secrets.KUBECONFIG_PRIV }}
           NAMESPACE: ${{ vars.NAMESPACE }}
           VERSION: ${{ inputs.DATE }}-${{ vars.ENVIRONMENT }}

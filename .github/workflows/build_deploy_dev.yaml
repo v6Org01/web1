@@ -51,10 +51,6 @@ jobs:
           context: .
           file: src/docker/Dockerfile
           build-args: |
-            "HUGO_DIR=${{ vars.HUGO_DIR }}"
-            "HUGO_TITLE=${{ vars.HUGO_TITLE }}"
-            "HUGO_URI=${{ vars.HUGO_URI }}"
-            "TZ=${{ vars.TZ }}"
             "WEB1_UID=${{ vars.WEB1_UID }}"
             "WEB1_USER=${{ vars.WEB1_USER }}"
             "WEB1_GID=${{ vars.WEB1_GID }}"
